@@ -1,4 +1,4 @@
-import { programs } from "./data/programs.js";
+import { programs } from "@programs";
 import { ProgramCard } from "./components/ProgramCard";
 import { Code2, BookOpen } from "lucide-react";
 

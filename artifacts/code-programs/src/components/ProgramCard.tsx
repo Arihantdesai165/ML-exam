@@ -1,24 +1,15 @@
 import { useState, useCallback } from "react";
-import { Check, Copy, Code2 } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 interface Program {
   id: number;
-  name: string;
-  language: string;
+  title: string;
   code: string;
 }
 
 interface ProgramCardProps {
   program: Program;
 }
-
-const LANGUAGE_COLORS: Record<string, string> = {
-  Python: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
-  C: "text-blue-400 bg-blue-400/10 border-blue-400/20",
-  "C++": "text-purple-400 bg-purple-400/10 border-purple-400/20",
-  Java: "text-orange-400 bg-orange-400/10 border-orange-400/20",
-  JavaScript: "text-green-400 bg-green-400/10 border-green-400/20",
-};
 
 export function ProgramCard({ program }: ProgramCardProps) {
   const [copied, setCopied] = useState(false);
@@ -42,29 +33,17 @@ export function ProgramCard({ program }: ProgramCardProps) {
     }
   }, [program.code]);
 
-  const langColor =
-    LANGUAGE_COLORS[program.language] ??
-    "text-slate-400 bg-slate-400/10 border-slate-400/20";
-
   return (
     <div className="group relative bg-[#0f1117] border border-[#1e2433] rounded-xl overflow-hidden transition-all duration-300 hover:border-[#2d3a52] hover:shadow-lg hover:shadow-black/40 hover:-translate-y-0.5">
       <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-[#1a2035] border border-[#2d3a52] text-xs font-bold text-slate-400 font-mono">
               {program.id}
             </span>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-100 leading-snug truncate">
-                {program.name}
-              </h3>
-              <span
-                className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${langColor}`}
-              >
-                <Code2 className="w-2.5 h-2.5" />
-                {program.language}
-              </span>
-            </div>
+            <h3 className="text-sm font-semibold text-slate-100 leading-snug truncate">
+              {program.title}
+            </h3>
           </div>
 
           <button
