@@ -1,5 +1,5 @@
 import { programs } from "@programs";
-import { ProgramCard } from "./components/ProgramCard";
+import { ProgramCard, Program } from "./components/ProgramCard";
 import { Code2, BookOpen } from "lucide-react";
 
 function App() {
@@ -35,7 +35,7 @@ function App() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {programs.map((program) => (
+          {(programs as Program[]).map((program) => (
             <ProgramCard key={program.id} program={program} />
           ))}
         </div>

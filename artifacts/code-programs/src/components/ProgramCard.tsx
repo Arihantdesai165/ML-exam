@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Check, Copy } from "lucide-react";
 
-interface Program {
+export interface Program {
   id: number;
   title: string;
   code: string;
