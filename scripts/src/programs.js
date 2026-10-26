@@ -3,585 +3,585 @@ export const programs = [
         id: 1,
         title: "Program-1",
         code: `
-import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.datasets import fetch_california_housing
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <omp.h>
 
-# Step 1: Load the California Housing dataset
-data = fetch_california_housing(as_frame=True)
-housing_df = data.frame
+// Function to merge two sorted subarrays
+void merge(int arr[], int left, int mid, int right)
+{
+    int i, j, k;
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
 
-# Step 2: Create histograms for numerical features
-numerical_features = housing_df.select_dtypes(include=[np.number]).columns
+    // Create temporary arrays
+    int *L = (int *)malloc(n1 * sizeof(int));
+    int *R = (int *)malloc(n2 * sizeof(int));
 
-# Plot histograms
-plt.figure(figsize=(15, 10))
-for i, feature in enumerate(numerical_features):
-    plt.subplot(3, 3, i + 1)
-    sns.histplot(housing_df[feature], kde=True, bins=30, color='blue')
-    plt.title(f'Distribution of {feature}')
-plt.tight_layout()
-plt.show()
+    // Copy data to temporary arrays L[] and R[]
+    for (i = 0; i < n1; i++)
+        L[i] = arr[left + i];
 
-# Step 3: Generate box plots for numerical features
-plt.figure(figsize=(15, 10))
-for i, feature in enumerate(numerical_features):
-    plt.subplot(3, 3, i + 1)
-    sns.boxplot(x=housing_df[feature], color='orange')
-    plt.title(f'Box Plot of {feature}')
-plt.tight_layout()
-plt.show()
+    for (j = 0; j < n2; j++)
+        R[j] = arr[mid + 1 + j];
 
-# Step 4: Identify outliers using the IQR method
-print("Outliers Detection:")
-outliers_summary = {}
-for feature in numerical_features:
-    Q1 = housing_df[feature].quantile(0.25)
-    Q3 = housing_df[feature].quantile(0.75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-    outliers = housing_df[(housing_df[feature] < lower_bound) | (housing_df[feature] > upper_bound)]
-    outliers_summary[feature] = len(outliers)
-    print(f"{feature}: {len(outliers)} outliers")
+    // Merge the temporary arrays
+    i = 0;
+    j = 0;
+    k = left;
 
-# Optional: Print a summary of the dataset
-print("\nDataset Summary:")
-print(housing_df.describe())
+    while (i < n1 && j < n2)
+    {
+        if (L[i] <= R[j])
+        {
+            arr[k] = L[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
 
+    // Copy remaining elements of L[]
+    while (i < n1)
+    {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    // Copy remaining elements of R[]
+    while (j < n2)
+    {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+
+    free(L);
+    free(R);
+}
+
+// Sequential Merge Sort
+void sequentialMergeSort(int arr[], int left, int right)
+{
+    if (left < right)
+    {
+        int mid = left + (right - left) / 2;
+
+        sequentialMergeSort(arr, left, mid);
+        sequentialMergeSort(arr, mid + 1, right);
+
+        merge(arr, left, mid, right);
+    }
+}
+
+// Parallel Merge Sort using OpenMP sections
+void parallelMergeSort(int arr[], int left, int right)
+{
+    if (left < right)
+    {
+        int mid = left + (right - left) / 2;
+
+        #pragma omp parallel sections
+        {
+            #pragma omp section
+            {
+                parallelMergeSort(arr, left, mid);
+            }
+
+            #pragma omp section
+            {
+                parallelMergeSort(arr, mid + 1, right);
+            }
+        }
+
+        merge(arr, left, mid, right);
+    }
+}
+
+// Function to print an array
+void printArray(int arr[], int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        printf("%d ", arr[i]);
+    }
+
+    printf("\n");
+}
+
+int main()
+{
+    int n;
+
+    printf("Enter the number of elements: ");
+    scanf("%d", &n);
+
+    int *arr_seq = (int *)malloc(n * sizeof(int));
+    int *arr_par = (int *)malloc(n * sizeof(int));
+
+    // Initialize arrays with random values
+    srand(time(NULL));
+
+    for (int i = 0; i < n; i++)
+    {
+        arr_seq[i] = rand() % 1000;
+        arr_par[i] = arr_seq[i];
+    }
+
+    printf("Original array (first few elements): ");
+
+    for (int i = 0; i < (n > 10 ? 10 : n); i++)
+    {
+        printf("%d ", arr_seq[i]);
+    }
+
+    printf("\n");
+
+    // Sequential Merge Sort execution time
+    double start_time_seq = omp_get_wtime();
+
+    sequentialMergeSort(arr_seq, 0, n - 1);
+
+    double end_time_seq = omp_get_wtime();
+
+    printf("Sequential Mergesort Time: %f seconds\n",
+           end_time_seq - start_time_seq);
+
+    // Parallel Merge Sort execution time
+    double start_time_par = omp_get_wtime();
+
+    parallelMergeSort(arr_par, 0, n - 1);
+
+    double end_time_par = omp_get_wtime();
+
+    printf("Parallel Mergesort Time: %f seconds\n",
+           end_time_par - start_time_par);
+
+    printf("Sorted array (first few elements) after parallel sort: ");
+
+    for (int i = 0; i < (n > 10 ? 10 : n); i++)
+    {
+        printf("%d ", arr_par[i]);
+    }
+
+    printf("\n");
+
+    free(arr_seq);
+    free(arr_par);
+
+    return 0;
+}
+Execution
+gcc -fopenmp Pgm1.c -o Pgm1
+./Pgm1
 `
     },
-
     {
         id: 2,
         title: "Program-2",
         code: `
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.datasets import fetch_california_housing
-
-# Step 1: Load the California Housing Dataset
-california_data = fetch_california_housing(as_frame=True)
-data = california_data.frame
-
-# Step 2: Compute the correlation matrix
-correlation_matrix = data.corr()
-
-# Step 3: Visualize the correlation matrix using a heatmap
-plt.figure(figsize=(10, 8))
-sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-plt.title('Correlation Matrix of California Housing Features')
-plt.show()
-
-# Step 4: Create a pair plot to visualize pairwise relationships
-sns.pairplot(data, diag_kind='kde', plot_kws={'alpha': 0.5})
-plt.suptitle('Pair Plot of California Housing Features', y=1.02)
-plt.show()
-`
+#include <stdio.h>
+#include <omp.h>
+#include <stdlib.h>
+int main() {
+ int num_iterations;
+ printf("Enter the number of iterations: ");
+ scanf("%d", &num_iterations);
+ #pragma omp parallel num_threads(omp_get_max_threads())
+ {
+ int thread_id = omp_get_thread_num();
+ #pragma omp for schedule(static, 2)
+ for (int i = 0; i < num_iterations; i++) {
+ printf("Thread %d: Iteration %d\n", thread_id, i);
+ }
+ }
+ return 0;
+}
+Execution
+gcc -fopenmp pgm2.c -o pgm2
+./pgm2`
     },
     {
         id: 3,
         title: "Program-3",
         code: `
-import numpy as np
-import pandas as pd
-from sklearn.datasets import load_iris
-from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
-
-# Load the Iris dataset
-iris = load_iris()
-data = iris.data
-labels = iris.target
-label_names = iris.target_names
-
-# Convert to a DataFrame for better visualization
-iris_df = pd.DataFrame(data, columns=iris.feature_names)
-
-# Perform PCA to reduce dimensionality to 2
-pca = PCA(n_components=2)
-data_reduced = pca.fit_transform(data)
-
-# Create a DataFrame for the reduced data
-reduced_df = pd.DataFrame(data_reduced, columns=['Principal Component 1', 'Principal Component 2'])
-reduced_df['Label'] = labels
-
-# Plot the reduced data
-plt.figure(figsize=(8, 6))
-colors = ['r', 'g', 'b']
-for i, label in enumerate(np.unique(labels)):
-    plt.scatter(
-        reduced_df[reduced_df['Label'] == label]['Principal Component 1'],
-        reduced_df[reduced_df['Label'] == label]['Principal Component 2'],
-        label=label_names[label],
-        color=colors[i]
-    )
-
-plt.title('PCA on Iris Dataset')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend()
-plt.grid()
-plt.show()
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+// Recursive function to compute Fibonacci numbers using OpenMP tasks
+int fib(int n) {
+ int x, y;
+ if (n < 2)
+ return n;
+ #pragma omp task shared(x)
+ x = fib(n - 1);
+ #pragma omp task shared(y)
+ y = fib(n - 2);
+ #pragma omp taskwait
+ return x + y;
+}
+int main() {
+ int n;
+ printf("Enter number of Fibonacci terms to calculate: ");
+ scanf("%d", &n);
+ printf("Fibonacci series up to %d terms:\n", n);
+ #pragma omp parallel
+ {
+ #pragma omp single
+ {
+ for (int i = 0; i < n; i++) {
+ int result;
+ #pragma omp task shared(result)
+ {
+ result = fib(i);
+ #pragma omp critical
+ {
+ printf("Fib(%d) = %d\n", i, result);
+ }
+ }
+ }
+ }
+ }
+ return 0;
+}
+Execution
+gcc -fopenmp pgm3.c -o pgm3
+./pgm3
 `
     },
     {
         id: 4,
         title: "Program-4",
         code: `
-import pandas as pd
-
-def find_s_algorithm(file_path):
-    data = pd.read_csv(file_path)
-
-    print("Training data:")
-    print(data)
-
-    attributes = data.columns[:-1]
-    class_label = data.columns[-1]
-
-    hypothesis = ['?' for _ in attributes]
-
-    for index, row in data.iterrows():
-        if row[class_label] == 'Yes':
-            for i, value in enumerate(row[attributes]):
-                if hypothesis[i] == '?' or hypothesis[i] == value:
-                    hypothesis[i] = value
-                else:
-                    hypothesis[i] = '?'
-
-    return hypothesis
-
-
-file_path = 'training_data.csv'
-hypothesis = find_s_algorithm(file_path)
-print("\nThe final hypothesis is:", hypothesis)
-
-
-
-Training data:
-
-     Outlook  Temperature  Humidity  Windy  PlayTennis
-0     Sunny         Hot     High     False       No
-1     Sunny         Hot     High     True        No
-2  Overcast         Hot     High     False       Yes
-3      Rain        Cold     High     False       Yes
-4      Rain        Cold     High     True        No
-5  Overcast         Hot     High     True        Yes
-6     Sunny         Hot     High     False       No
-
-
-The final hypothesis is: ['Overcast', 'Hot', 'High', '?']
-
-`
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+#include <time.h>
+#include <math.h>
+int is_prime(int n) {
+ if (n <= 1) return 0;
+ for (int i = 2; i * i <= n; i++) {
+ if (n % i == 0) return 0;
+ }
+ return 1;
+}
+int main() {
+ int n;
+ printf("Enter the value of n: ");
+ scanf("%d", &n);
+ // Serial execution
+ clock_t start_serial = clock();
+ int serial_count = 0;
+ for (int i = 2; i <= n; i++) {
+ if (is_prime(i)) {
+ serial_count++;
+ }
+ }
+ clock_t end_serial = clock();
+ double time_serial = (double)(end_serial - start_serial) / CLOCKS_PER_SEC;
+ // Parallel execution
+ clock_t start_parallel = clock();
+ int parallel_count = 0;
+ #pragma omp parallel for reduction(+:parallel_count)
+ for (int i = 2; i <= n; i++) {
+ if (is_prime(i)) {
+ parallel_count++;
+ }
+ }
+ clock_t end_parallel = clock();
+ double time_parallel = (double)(end_parallel - start_parallel) / CLOCKS_PER_SEC;
+ printf("Serial execution time: %f seconds\n", time_serial);
+ printf("Parallel execution time: %f seconds\n", time_parallel);
+ printf("Number of primes found (serial): %d\n", serial_count);
+ printf("Number of primes found (parallel): %d\n", parallel_count);
+ return 0;
+}
+Execution
+gcc -fopenmp pgm4.c -o pgm4
+./pgm4
+    `
     },
     {
         id: 5,
         title: "Program-5",
         code: `
-import numpy as np
-import matplotlib.pyplot as plt
-from collections import Counter
-
-data = np.random.rand(100)
-
-labels = ["Class1" if x <= 0.5 else "Class2" for x in data[:50]]
-
-
-def euclidean_distance(x1, x2):
-    return abs(x1 - x2)
-
-
-def knn_classifier(train_data, train_labels, test_point, k):
-    distances = [(euclidean_distance(test_point, train_data[i]), train_labels[i]) for i in range(len(train_data))]
-
-    distances.sort(key=lambda x: x[0])
-    k_nearest_neighbors = distances[:k]
-
-    k_nearest_labels = [label for _, label in k_nearest_neighbors]
-
-    return Counter(k_nearest_labels).most_common(1)[0][0]
-
-
-train_data = data[:50]
-train_labels = labels
-
-test_data = data[50:]
-
-k_values = [1, 2, 3, 4, 5, 20, 30]
-
-print("--- k-Nearest Neighbors Classification ---")
-print("Training dataset: First 50 points labeled based on the rule (x <= 0.5 -> Class1, x > 0.5 -> Class2)")
-print("Testing dataset: Remaining 50 points to be classified\n")
-
-results = {}
-
-for k in k_values:
-    print(f"Results for k = {k}:")
-    classified_labels = [knn_classifier(train_data, train_labels, test_point, k) for test_point in test_data]
-    results[k] = classified_labels
-
-    for i, label in enumerate(classified_labels, start=51):
-        print(f"Point x{i} (value: {test_data[i - 51]:.4f}) is classified as {label}")
-    print("\n")
-
-print("Classification complete.\n")
-
-for k in k_values:
-    classified_labels = results[k]
-    class1_points = [test_data[i] for i in range(len(test_data)) if classified_labels[i] == "Class1"]
-    class2_points = [test_data[i] for i in range(len(test_data)) if classified_labels[i] == "Class2"]
-
-    plt.figure(figsize=(10, 6))
-    plt.scatter(train_data, [0] * len(train_data), c=["blue" if label == "Class1" else "red" for label in train_labels],
-                label="Training Data", marker="o")
-    plt.scatter(class1_points, [1] * len(class1_points), c="blue", label="Class1 (Test)", marker="x")
-    plt.scatter(class2_points, [1] * len(class2_points), c="red", label="Class2 (Test)", marker="x")
-
-    plt.title(f"k-NN Classification Results for k = {k}")
-    plt.xlabel("Data Points")
-    plt.ylabel("Classification Level")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-`
+#include <mpi.h>
+#include <stdio.h>
+#include <string.h>
+int main(int argc, char** argv) {
+ int rank, size;
+ const int MAX_LEN = 100;
+ char message[MAX_LEN];
+ // Initialize the MPI environment
+ MPI_Init(&argc, &argv);
+ // Get the number of processes
+ MPI_Comm_size(MPI_COMM_WORLD, &size);
+ // Get the rank of the process
+ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+ if (size < 2) {
+ if (rank == 0) {
+ printf("This program requires at least two processes.\n");
+ }
+ MPI_Finalize();
+ return 0;
+ }
+ if (rank == 0) {
+ // Process 0 sends a message to process 1
+ strcpy(message, "Hello from process 0!");
+ MPI_Send(message, strlen(message) + 1, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+ printf("Process 0 sent message: %s\n", message);
+ } else if (rank == 1) {
+ // Process 1 receives the message from process 0
+ MPI_Recv(message, MAX_LEN, MPI_CHAR, 0, 0, MPI_COMM_WORLD,
+MPI_STATUS_IGNORE);
+ printf("Process 1 received message: %s\n", message);
+ }
+ // Finalize the MPI environment
+ MPI_Finalize();
+ return 0;
+}
+Note: install mpi
+sudo apt install -y openmpi-bin libopenmpi-dev
+Execution steps
+mpicc -o 5 5.c
+mpirun -np 2 ./5
+    `
     },
     {
         id: 6,
         title: "Program-6",
         code: `
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-def gaussian_kernel(x, xi, tau):
-    return np.exp(-np.sum((x - xi) ** 2) / (2 * tau ** 2))
-
-def locally_weighted_regression(x, X, y, tau):
-    m = X.shape[0]
-    weights = np.array([gaussian_kernel(x, X[i], tau) for i in range(m)])
-    W = np.diag(weights)
-    X_transpose_W = X.T @ W
-    theta = np.linalg.inv(X_transpose_W @ X) @ X_transpose_W @ y
-    return x @ theta
-
-np.random.seed(42)
-X = np.linspace(0, 2 * np.pi, 100)
-y = np.sin(X) + 0.1 * np.random.randn(100)
-X_bias = np.c_[np.ones(X.shape), X]
-
-x_test = np.linspace(0, 2 * np.pi, 200)
-x_test_bias = np.c_[np.ones(x_test.shape), x_test]
-tau = 0.5
-y_pred = np.array([locally_weighted_regression(xi, X_bias, y, tau) for xi in x_test_bias])
-
-plt.figure(figsize=(10, 6))
-plt.scatter(X, y, color='red', label='Training Data', alpha=0.7)
-plt.plot(x_test, y_pred, color='blue', label=f'LWR Fit (tau={tau})', linewidth=2)
-plt.xlabel('X', fontsize=12)
-plt.ylabel('y', fontsize=12)
-plt.title('Locally Weighted Regression', fontsize=14)
-plt.legend(fontsize=10)
-plt.grid(alpha=0.3)
-plt.show()
-
+#include <mpi.h>
+#include <stdio.h>
+int main(int argc, char** argv) {
+ int rank, size;
+ int send_data, recv_data;
+ MPI_Init(&argc, &argv);
+ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+ MPI_Comm_size(MPI_COMM_WORLD, &size);
+ if (size < 2) {
+ if (rank == 0) {
+ printf("This program needs at least 2 processes.\n");
+ }
+ MPI_Finalize();
+ return 0;
+ }
+ send_data = rank;
+ // Both processes send first — leads to deadlock
+ if (rank == 0) {
+ MPI_Send(&send_data, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+ MPI_Recv(&recv_data, 1, MPI_INT, 1, 0, MPI_COMM_WORLD,
+MPI_STATUS_IGNORE);
+ } else if (rank == 1) {
+ MPI_Send(&send_data, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+ MPI_Recv(&recv_data, 1, MPI_INT, 0, 0, MPI_COMM_WORLD,
+MPI_STATUS_IGNORE);
+ }
+ printf("Process %d received data %d\n", rank, recv_data);
+ MPI_Finalize();
+ return 0;
+}
+Note: install mpi
+sudo apt install -y openmpi-bin libopenmpi-dev
+Execution steps
+mpicc -o 6 6.c
+mpirun -np 2 ./6
 `
     },
     {
         id: 7,
         title: "Program-7",
         code: `
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-from sklearn.datasets import fetch_california_housing
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import mean_squared_error, r2_score
-
-
-def linear_regression_california():
-    # Load California Housing Dataset
-    housing = fetch_california_housing(as_frame=True)
-
-    X = housing.data[["AveRooms"]]
-    y = housing.target
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-
-    y_pred = model.predict(X_test)
-
-    plt.figure(figsize=(8, 5))
-    plt.scatter(X_test, y_test, color="blue", label="Actual")
-    plt.scatter(X_test, y_pred, color="red", label="Predicted")
-    plt.xlabel("Average Number of Rooms (AveRooms)")
-    plt.ylabel("Median Value of Homes")
-    plt.title("Linear Regression - California Housing Dataset")
-    plt.legend()
-    plt.show()
-
-    print("\nLinear Regression - California Housing Dataset")
-    print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
-    print("R² Score:", r2_score(y_test, y_pred))
-
-
-def polynomial_regression_auto_mpg():
-    # Auto MPG Dataset URL
-    url = (
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/"
-        "auto-mpg/auto-mpg.data"
-    )
-
-    column_names = [
-        "mpg",
-        "cylinders",
-        "displacement",
-        "horsepower",
-        "weight",
-        "acceleration",
-        "model_year",
-        "origin",
-    ]
-
-    data = pd.read_csv(
-        url,
-        sep=r"\s+",
-        names=column_names,
-        na_values="?"
-    )
-
-    data = data.dropna()
-
-    X = data[["displacement"]]
-    y = data["mpg"]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-
-    poly_model = make_pipeline(
-        PolynomialFeatures(degree=2),
-        StandardScaler(),
-        LinearRegression()
-    )
-
-    poly_model.fit(X_train, y_train)
-
-    y_pred = poly_model.predict(X_test)
-
-    plt.figure(figsize=(8, 5))
-    plt.scatter(X_test, y_test, color="blue", label="Actual")
-    plt.scatter(X_test, y_pred, color="red", label="Predicted")
-    plt.xlabel("Displacement")
-    plt.ylabel("Miles Per Gallon (MPG)")
-    plt.title("Polynomial Regression - Auto MPG Dataset")
-    plt.legend()
-    plt.show()
-
-    print("\nPolynomial Regression - Auto MPG Dataset")
-    print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
-    print("R² Score:", r2_score(y_test, y_pred))
-
-
-if __name__ == "__main__":
-    print("Demonstrating Linear Regression and Polynomial Regression\n")
-
-    linear_regression_california()
-    polynomial_regression_auto_mpg()
-`
+#include <mpi.h>
+#include <stdio.h>
+int main(int argc, char** argv) {
+int rank, size;
+int data;
+// Initialize the MPI environment
+MPI_Init(&argc, &argv);
+// Get the rank and size
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+// Only the root process (rank 0) sets the data
+if (rank == 0) {
+data = 2025;
+printf("Process 0 is broadcasting data = %d\n", data);
+}
+// Broadcast data from root (rank 0) to all processes
+MPI_Bcast(&data, 1, MPI_INT, 0, MPI_COMM_WORLD);
+// All processes print the received data
+printf("Process %d received data = %d\n", rank, data);
+// Finalize the MPI environment
+MPI_Finalize();
+return 0;
+}
+Note: install mpi
+sudo apt install -y openmpi-bin libopenmpi-dev
+Execution steps
+mpicc -o 7 7.c
+mpirun -np 4 ./7
+    `
     },
     {
         id: 8,
         title: "Program-8",
         code: `
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.datasets import fetch_california_housing
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import mean_squared_error, r2_score
+#include <mpi.h>
+#include <stdio.h>
 
-def linear_regression_california():
-    housing = fetch_california_housing(as_frame=True)
-    X = housing.data[["AveRooms"]] 
-    y = housing.target 
+int main(int argc, char** argv)
+{
+    int rank, size;
+    const int ROOT = 0;
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    int send_data[8];       // Array to be scattered (only used by ROOT)
+    int recv_data;          // Each process receives one int
+    int gathered_data[8];   // Array to gather data back (only used by ROOT)
 
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+    MPI_Init(&argc, &argv);  // Initialize MPI
 
-    y_pred = model.predict(X_test)
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);  // Get current process rank
+    MPI_Comm_size(MPI_COMM_WORLD, &size);  // Get total number of processes
 
-    plt.scatter(X_test, y_test, color="blue", label="Actual")
-    plt.plot(X_test, y_pred, color="red", label="Predicted")
-    plt.xlabel("Average number of rooms (AveRooms)")
-    plt.ylabel("Median value of homes ($100,000)")
-    plt.title("Linear Regression - California Housing Dataset")
-    plt.legend()
-    plt.show()
+    if (size != 8)
+    {
+        if (rank == ROOT)
+        {
+            printf("Please run this program with 8 processes.\n");
+        }
 
-    print("Linear Regression - California Housing Dataset")
-    print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
-    print("R^2 Score:", r2_score(y_test, y_pred))
+        MPI_Finalize();
+        return 0;
+    }
 
+    // ROOT initializes the data to be scattered
+    if (rank == ROOT)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            send_data[i] = i * 10;  // Example data: 0, 10, 20, ..., 70
+        }
 
-def polynomial_regression_auto_mpg():
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data"
-    column_names = ["mpg", "cylinders", "displacement", "horsepower", "weight", "acceleration", "model_year", "origin"]
-    data = pd.read_csv(url, sep='\s+', names=column_names, na_values="?")
-    data = data.dropna()
+        printf("Process %d: Data to scatter: ", ROOT);
 
-    X = data["displacement"].values.reshape(-1, 1) 
-    y = data["mpg"].values
+        for (int i = 0; i < 8; i++)
+        {
+            printf("%d ", send_data[i]);
+        }
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        printf("\n");
+    }
 
-    poly_model = make_pipeline(PolynomialFeatures(degree=2), StandardScaler(), LinearRegression())
-    poly_model.fit(X_train, y_train)
+    // Scatter: send one element of send_data to each process
+    MPI_Scatter(send_data, 1, MPI_INT, &recv_data, 1, MPI_INT,
+                ROOT, MPI_COMM_WORLD);
 
-    y_pred = poly_model.predict(X_test)
+    // Each process does some work (e.g., multiply by 2)
+    recv_data *= 2;
 
-    plt.scatter(X_test, y_test, color="blue", label="Actual")
-    plt.scatter(X_test, y_pred, color="red", label="Predicted")
-    plt.xlabel("Displacement")
-    plt.ylabel("Miles per gallon (mpg)")
-    plt.title("Polynomial Regression - Auto MPG Dataset")
-    plt.legend()
-    plt.show()
+    // Gather: collect all processed data back to ROOT
+    MPI_Gather(&recv_data, 1, MPI_INT, gathered_data, 1, MPI_INT,
+               ROOT, MPI_COMM_WORLD);
 
-    print("Polynomial Regression - Auto MPG Dataset")
-    print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
-    print("R^2 Score:", r2_score(y_test, y_pred))
+    // ROOT prints the gathered results
+    if (rank == ROOT)
+    {
+        printf("Process %d: Gathered results: ", ROOT);
 
+        for (int i = 0; i < 8; i++)
+        {
+            printf("%d ", gathered_data[i]);
+        }
 
-if __name__ == "__main__":
-    print("Demonstrating Linear Regression and Polynomial Regression\n")
-    linear_regression_california()
-    polynomial_regression_auto_mpg()
+        printf("\n");
+    }
 
-`
+    MPI_Finalize();
+    return 0;
+}
+
+Note: Install MPI
+
+sudo apt install -y openmpi-bin libopenmpi-dev
+
+Execution Steps
+
+Step 1: Compile the program
+
+mpicc -o 8 8.c
+
+Step 2: Run the program with 8 processes
+
+mpirun -np 8 ./8
+    `
     },
     {
         id: 9,
         title: "Program-9",
         code: `
-import numpy as np
-from sklearn.datasets import fetch_olivetti_faces
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import matplotlib.pyplot as plt
+#include <mpi.h>
+#include <stdio.h>
+int main(int argc, char** argv) {
+ int rank, size;
+ int local_value;
+ int result;
+ MPI_Init(&argc, &argv); // Initialize MPI
+ MPI_Comm_rank(MPI_COMM_WORLD, &rank); // Get current process rank
+ MPI_Comm_size(MPI_COMM_WORLD, &size); // Get number of processes
+ // Each process sets its local value to rank + 1
+ local_value = rank + 1;
+ if (rank == 0) {
+ printf("Each process contributes its rank + 1 to the reductions.\n");
+ }
+ // ---------- MPI_Reduce (Result only at root) ----------
+ if (rank == 0) printf("\nUsing MPI_Reduce (results only at root):\n");
+ // SUM
+ MPI_Reduce(&local_value, &result, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+ if (rank == 0) printf("SUM: %d\n", result);
+ // PRODUCT
+ MPI_Reduce(&local_value, &result, 1, MPI_INT, MPI_PROD, 0, MPI_COMM_WORLD);
+ if (rank == 0) printf("PRODUCT: %d\n", result);
+ // MAX
+ MPI_Reduce(&local_value, &result, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+ if (rank == 0) printf("MAX: %d\n", result);
+ // MIN
+ MPI_Reduce(&local_value, &result, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+ if (rank == 0) printf("MIN: %d\n", result);
+ // ---------- MPI_Allreduce (Result at all processes) ----------
+ if (rank == 0) printf("\nUsing MPI_Allreduce (results at all processes):\n");
+ // SUM
+ MPI_Allreduce(&local_value, &result, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+ printf("Process %d: SUM = %d\n", rank, result);
+ // PRODUCT
+ MPI_Allreduce(&local_value, &result, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+ printf("Process %d: PRODUCT = %d\n", rank, result);
+ // MAX
+ MPI_Allreduce(&local_value, &result, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+ printf("Process %d: MAX = %d\n", rank, result);
+ // MIN
+ MPI_Allreduce(&local_value, &result, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+ printf("Process %d: MIN = %d\n", rank, result);
+ MPI_Finalize();
+ return 0;
+}
+Note: install mpi
+sudo apt install -y openmpi-bin libopenmpi-dev
+Execution steps
+mpicc -o 9 9.c
+mpirun -np 9 ./9
 
-data = fetch_olivetti_faces(shuffle=True, random_state=42)
-X = data.data
-y = data.target
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-
-gnb = GaussianNB()
-gnb.fit(X_train, y_train)
-y_pred = gnb.predict(X_test)
-
-accuracy = accuracy_score(y_test, y_pred)
-print(f'Accuracy: {accuracy * 100:.2f}%')
-
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred, zero_division=1))
-
-print("\nConfusion Matrix:")
-print(confusion_matrix(y_test, y_pred))
-
-cross_val_accuracy = cross_val_score(gnb, X, y, cv=5, scoring='accuracy')
-print(f'\nCross-validation accuracy: {cross_val_accuracy.mean() * 100:.2f}%')
-
-fig, axes = plt.subplots(3, 5, figsize=(12, 8))
-for ax, image, label, prediction in zip(axes.ravel(), X_test, y_test, y_pred):
-    ax.imshow(image.reshape(64, 64), cmap=plt.cm.gray)
-    ax.set_title(f"True: {label}, Pred: {prediction}")
-    ax.axis('off')
-
-plt.show()
-
-`
+ 
+    `
     },
     {
         id: 10,
         title: "Program-10",
-        code: `
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.datasets import load_breast_cancer
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.metrics import confusion_matrix, classification_report
-
-data = load_breast_cancer()
-X = data.data
-y = data.target
-
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-kmeans = KMeans(n_clusters=2, random_state=42)
-y_kmeans = kmeans.fit_predict(X_scaled)
-
-print("Confusion Matrix:")
-print(confusion_matrix(y, y_kmeans))
-print("\nClassification Report:")
-print(classification_report(y, y_kmeans))
-
-pca = PCA(n_components=2)
-X_pca = pca.fit_transform(X_scaled)
-
-df = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
-df['Cluster'] = y_kmeans
-df['True Label'] = y
-
-plt.figure(figsize=(8, 6))
-sns.scatterplot(data=df, x='PC1', y='PC2', hue='Cluster', palette='Set1', s=100, edgecolor='black', alpha=0.7)
-plt.title('K-Means Clustering of Breast Cancer Dataset')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend(title="Cluster")
-plt.show()
-
-plt.figure(figsize=(8, 6))
-sns.scatterplot(data=df, x='PC1', y='PC2', hue='True Label', palette='coolwarm', s=100, edgecolor='black', alpha=0.7)
-plt.title('True Labels of Breast Cancer Dataset')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend(title="True Label")
-plt.show()
-
-plt.figure(figsize=(8, 6))
-sns.scatterplot(data=df, x='PC1', y='PC2', hue='Cluster', palette='Set1', s=100, edgecolor='black', alpha=0.7)
-centers = pca.transform(kmeans.cluster_centers_)
-plt.scatter(centers[:, 0], centers[:, 1], s=200, c='red', marker='X', label='Centroids')
-plt.title('K-Means Clustering with Centroids')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend(title="Cluster")
-plt.show()
-
-`
+        code: ``
     }
 ];
